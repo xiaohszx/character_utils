@@ -14,7 +14,7 @@ class API_Class character_utils
 {
 public:
 	//void show();
-	static int get_bit_count(unsigned char c);
+	static int get_bit_count(int64_t c);
 	static std::vector<int> convert_utf8_to_unicode(const std::string& str);
 	static std::string print_unicode(const std::vector<int>& vec);
 	static int convert_unicode_to_utf8(int unicode);
