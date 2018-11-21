@@ -24074,7 +24074,7 @@ static std::map<int, int> character_unicode_gbk_map = {
 { 0xFFE5, 0xA3A4}
 };
 
-int character_utils::get_bit_count(unsigned char c)
+int character_utils::get_bit_count(int64_t c)
 {
 	int a = 0;
 	while (c >> a) {
