@@ -1,4 +1,3 @@
-#define API_Class_EX 
 #include "stdafx.h"
 #include <iostream>
 #include "unicode_gbk.h"
@@ -24074,7 +24073,7 @@ static std::map<int, int> character_unicode_gbk_map = {
 { 0xFFE5, 0xA3A4}
 };
 
-int character_utils::get_bit_count(int64_t c)
+int character_utils::get_bit_count(std::int64_t c)
 {
 	int a = 0;
 	while (c >> a) {
@@ -24190,13 +24189,144 @@ int character_utils::convert_unicode_to_utf8(int unicode)
 	return result;
 }
 
-int character_utils::gbk_to_unicode(int unicode)
+int character_utils::gbk_to_unicode(int gbk)
 {
-	auto item = std::find_if(character_unicode_gbk_map.begin(), character_unicode_gbk_map.end(), [unicode](const auto& item) {
-		return (item.second == unicode);
+	auto item = std::find_if(character_unicode_gbk_map.begin(), character_unicode_gbk_map.end(), [gbk](const auto& item) {
+		return (item.second == gbk);
 	});
 	if (item == character_unicode_gbk_map.end()) {
 		return -1;
 	}
 	return item->first;
+}
+
+int character_utils::unicode_to_gbk(int unicode)
+{
+	auto item = character_unicode_gbk_map.find(unicode);
+	if (item == character_unicode_gbk_map.end()) {
+		return -1;
+	}
+	return item->second;
+}
+
+bool character_utils::is_big_edian()
+{
+	int a = 1;
+	const char* p = (char*)&a;
+	if ((*p)=='\0') {
+		return true;
+	}
+	return false;
+}
+
+std::string character_utils::dump_charater(int code)
+{
+	bool f = is_big_edian();
+	auto iter = (const char*)&code;
+	if (f) {
+		return std::string(iter, sizeof(int) - 1);
+	}
+	std::string result;
+	for (int i = 3; i >= 0; i--) {
+		if (iter[i] != '\0') {
+			result.append({ iter[i] });
+		}
+	}
+	return result;
+}
+
+std::string character_utils::convert_unicode_to_utf8(std::string unicode, int size)
+{
+	bool f = is_big_edian();
+	std::string result;
+	auto iter = unicode.begin();
+	while (iter != unicode.end()) {
+		int temp = 0;
+		if (f) {
+			memcpy(&temp, &(*iter), size);
+			iter += size;
+		}
+		else {
+			for (int index = (size - 1); index >= 0; index--) {
+				char* ptr = (char*)&temp;
+				memcpy((ptr + index), &(*iter), 1);
+				iter++;
+			}
+		}
+		auto rr = convert_unicode_to_utf8(temp);
+		auto sss = dump_charater(rr);
+		result.append(sss);
+		//iter++;
+	}
+	return result;
+}
+
+std::string character_utils::convert_utf8_to_unicode_string(const std::string& str)
+{
+	auto unicode_int_vec = convert_utf8_to_unicode(str);
+	std::string result;
+	for (auto&iter : unicode_int_vec) {
+		result.append(dump_charater(iter));
+	}
+	return result;
+}
+
+std::string character_utils::gbk_to_unicode(std::string gbk_str, int size)
+{
+	bool f = is_big_edian();
+	std::string result;
+	auto iter = gbk_str.begin();
+	while (iter != gbk_str.end()) {
+		int temp = 0;
+		if (f) {
+			memcpy(&temp, &(*iter), size);
+			iter += size;
+		}
+		else {
+			for (int index = (size - 1); index >= 0; index--) {
+				char* ptr = (char*)&temp;
+				memcpy((ptr + index), &(*iter), 1);
+				iter++;
+			}
+		}
+		auto rr = gbk_to_unicode(temp);
+		auto sss = dump_charater(rr);
+		result.append(sss);
+		//iter++;
+	}
+	return result;
+}
+
+std::vector<int> character_utils::str_to_int_vec(const std::string& str, int code_size)
+{
+	bool f = is_big_edian();
+	std::vector<int> result;
+	auto iter = str.begin();
+	while (iter != str.end()) {
+		int temp = 0;
+		if (f) {
+			memcpy(&temp, &(*iter), code_size);
+			iter += code_size;
+		}
+		else {
+			for (int index = (code_size - 1); index >= 0; index--) {
+				char* ptr = (char*)&temp;
+				memcpy((ptr + index), &(*iter), 1);
+				iter++;
+			}
+		}
+		result.push_back(temp);
+		//iter++;
+	}
+	return result;
+}
+
+std::string character_utils::unicode_to_gbk(std::string str, int code_size)
+{
+	auto vec = str_to_int_vec(str, code_size);
+	std::string result;
+	for (auto&iter : vec) {
+		result.append(dump_charater(unicode_to_gbk(iter)));
+	}
+	return result;
 }
